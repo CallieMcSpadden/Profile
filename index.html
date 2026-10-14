@@ -1,162 +1,147 @@
-/* ============ TOKENS ============ */
-:root {
-  --teal:   #3C7770;
-  --maroon: #852E2E;
-  --mint:   #DBF0E9;
-  --ink:    #04241A;
-  --amber:  #FFB938;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Callie McSpadden — Human Multi-Tool</title>
+  <meta name="description" content="Callie McSpadden — innovator at the intersection of STEM, Design, and Ed Tech." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-  --bg:     var(--mint);
-  --text:   var(--ink);          /* #04241A on #DBF0E9 = ~15:1, AAA */
-  --head:   var(--maroon);       /* large text, strong contrast */
-  --accent: var(--teal);
-  --pop:    var(--amber);
+  <header class="site-header">
+    <a class="brand" href="#top">Callie McSpadden</a>
+    <nav aria-label="Section navigation">
+      <ul class="nav-list">
+        <li><a href="#about">About</a></li>
+        <li><a href="#education">Education</a></li>
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#volunteer">Volunteer</a></li>
+        <li><a href="#portfolio">Portfolio</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
 
-  --dim: 0.62;                    /* low-contrast scroll state */
-  --radius: 14px;
-  --shadow: 0 10px 30px rgba(4, 36, 26, 0.18);
-  --ease: cubic-bezier(.2,.7,.2,1);
-}
+  <main id="main">
+    <!-- HERO -->
+    <section id="top" class="hero reveal">
+      <h1>Callie McSpadden</h1>
+      <p class="tagline">
+        Human Multi-Tool and Future-Forward Innovator nested at the intersect of
+        STEM, Design, and Ed Tech.
+      </p>
+      <p class="hero-cta">
+        <a class="btn" href="#portfolio">See my work</a>
+        <a class="btn btn-ghost" href="assets/CallieMcSpadden_Resume.pdf">Resume</a>
+      </p>
+    </section>
 
-@media (prefers-reduced-motion: reduce) {
-  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
-  html { scroll-behavior: auto; }
-}
+    <!-- ABOUT -->
+    <section id="about" class="section reveal" aria-labelledby="about-h">
+      <h2 id="about-h"><span class="wiggle" aria-hidden="true">✦</span> About</h2>
+      <p>
+        Placeholder: two-to-four sentences in first person. Who you are, what drives
+        you, and the through-line connecting your work.
+      </p>
+      <div class="grid">
+        <article class="card">
+          <h3>How I work</h3>
+          <p>Placeholder: your approach, values, or working style.</p>
+        </article>
+        <article class="card">
+          <h3>What I'm into</h3>
+          <p>Placeholder: interests, tools, or current curiosities.</p>
+        </article>
+      </div>
+    </section>
 
-/* ============ BASE ============ */
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 5.5rem; }
-body {
-  margin: 0;
-  font: 1rem/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-}
-h1, h2, h3 { font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; }
-h2 { color: var(--head); font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 0 0 1rem; }
-a { color: var(--maroon); text-underline-offset: 3px; }
-a:hover, a:focus-visible { color: var(--ink); }
+    <!-- EDUCATION -->
+    <section id="education" class="section reveal" aria-labelledby="edu-h">
+      <h2 id="edu-h"><span class="wiggle" aria-hidden="true">✦</span> Education</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Degree / Program One</h3>
+          <p class="meta">Institution · Years</p>
+          <p>Placeholder description.</p>
+        </article>
+        <article class="card">
+          <h3>Degree / Program Two</h3>
+          <p class="meta">Institution · Years</p>
+          <p>Placeholder description.</p>
+        </article>
+      </div>
+    </section>
 
-/* Focus ring — visible, high-contrast */
-:focus-visible {
-  outline: 3px solid var(--amber);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
+    <!-- EXPERIENCE -->
+    <section id="experience" class="section reveal" aria-labelledby="exp-h">
+      <h2 id="exp-h"><span class="wiggle" aria-hidden="true">✦</span> Professional Experience</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Role One</h3>
+          <p class="meta">Company · Dates</p>
+          <p>Placeholder description.</p>
+        </article>
+        <article class="card">
+          <h3>Role Two</h3>
+          <p class="meta">Company · Dates</p>
+          <p>Placeholder description.</p>
+        </article>
+      </div>
+    </section>
 
-.skip-link {
-  position: absolute; left: -999px; top: 0;
-  background: var(--ink); color: var(--mint);
-  padding: .6rem 1rem; z-index: 100;
-}
-.skip-link:focus { left: .5rem; top: .5rem; }
+    <!-- VOLUNTEER -->
+    <section id="volunteer" class="section reveal" aria-labelledby="vol-h">
+      <h2 id="vol-h"><span class="wiggle" aria-hidden="true">✦</span> Volunteer</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Volunteer Role One</h3>
+          <p class="meta">Organization · Dates</p>
+          <p>Placeholder description.</p>
+        </article>
+        <article class="card">
+          <h3>Volunteer Role Two</h3>
+          <p class="meta">Organization · Dates</p>
+          <p>Placeholder description.</p>
+        </article>
+      </div>
+    </section>
 
-/* ============ HEADER / NAV ============ */
-.site-header {
-  position: sticky; top: 0; z-index: 50;
-  display: flex; flex-wrap: wrap; gap: 1rem;
-  align-items: center; justify-content: space-between;
-  padding: .75rem clamp(1rem, 4vw, 3rem);
-  background: color-mix(in srgb, var(--mint) 88%, white);
-  border-bottom: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
-  backdrop-filter: blur(8px);
-}
-.brand { font-weight: 800; color: var(--ink); text-decoration: none; }
-.nav-list {
-  display: flex; flex-wrap: wrap; gap: .25rem .5rem;
-  list-style: none; margin: 0; padding: 0;
-}
-.nav-list a {
-  display: inline-block; padding: .4rem .7rem;
-  border-radius: 999px; text-decoration: none; color: var(--maroon);
-  transition: transform .25s var(--ease), background .25s var(--ease);
-}
-.nav-list a:hover, .nav-list a:focus-visible {
-  background: color-mix(in srgb, var(--amber) 30%, transparent);
-  transform: translateY(-2px) scale(1.04);
-}
+    <!-- PORTFOLIO -->
+    <section id="portfolio" class="section reveal" aria-labelledby="port-h">
+      <h2 id="port-h"><span class="wiggle" aria-hidden="true">✦</span> Portfolio</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Project One</h3>
+          <p class="meta">Biotech · Role</p>
+          <p>Placeholder description.</p>
+          <p class="links"><a href="#">Live</a> · <a href="#">Repo</a></p>
+        </article>
+        <article class="card">
+          <h3>Project Two</h3>
+          <p class="meta">Ed Tech · Role</p>
+          <p>Placeholder description.</p>
+          <p class="links"><a href="#">Live</a> · <a href="#">Repo</a></p>
+        </article>
+      </div>
+    </section>
 
-/* ============ LAYOUT ============ */
-main { max-width: 62rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3rem); }
-.section { padding: 4rem 0 3rem; }
-.grid {
-  display: grid; gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  margin-top: 1.5rem;
-}
+    <!-- CONTACT -->
+    <section id="contact" class="section reveal" aria-labelledby="contact-h">
+      <h2 id="contact-h"><span class="wiggle" aria-hidden="true">✦</span> Contact</h2>
+      <p>Let's build something. Reach me at:</p>
+      <ul class="contact-list">
+        <li><a href="mailto:calliemcspadden@gmail.com">calliemcspadden@gmail.com</a></li>
+        <li><a href="https://www.linkedin.com/in/calliemcspadden" rel="noopener">LinkedIn</a></li>
+      </ul>
+    </section>
+  </main>
 
-/* ============ HERO ============ */
-.hero { padding: 5rem 0 3rem; }
-.hero h1 { font-size: clamp(2.2rem, 7vw, 4rem); color: var(--ink); }
-.tagline { font-size: clamp(1.05rem, 2.4vw, 1.35rem); max-width: 42ch; }
-.hero-cta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.5rem; }
-.btn {
-  display: inline-block; padding: .7rem 1.3rem; border-radius: 999px;
-  background: var(--maroon); color: var(--mint);
-  font-weight: 700; text-decoration: none;
-  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
-}
-.btn:hover, .btn:focus-visible { transform: translateY(-3px) scale(1.03); box-shadow: var(--shadow); }
-.btn-ghost {
-  background: transparent; color: var(--maroon);
-  border: 2px solid var(--maroon);
-}
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Callie McSpadden. Built with care.</p>
+  </footer>
 
-/* ============ CARDS + HOVER POP ============ */
-.card {
-  background: color-mix(in srgb, white 55%, var(--mint));
-  border: 1px solid color-mix(in srgb, var(--teal) 30%, transparent);
-  border-left: 4px solid var(--teal);
-  border-radius: var(--radius);
-  padding: 1.25rem 1.35rem;
-  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
-}
-.card:hover, .card:focus-within {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: var(--shadow);
-}
-.card h3 { margin: 0 0 .35rem; color: var(--ink); font-size: 1.15rem; }
-.meta { color: var(--teal); font-weight: 700; font-size: .85rem; margin: 0 0 .5rem; }
-.links a { font-weight: 700; }
-
-/* ============ WHIMSY ============ */
-.wiggle { display: inline-block; color: var(--amber); }
-.card:hover .wiggle, .card:focus-within .wiggle { animation: wiggle .5s var(--ease); }
-@keyframes wiggle {
-  0%,100% { transform: rotate(0); }
-  25%     { transform: rotate(-12deg) scale(1.15); }
-  75%     { transform: rotate(12deg) scale(1.15); }
-}
-h2 .wiggle { margin-right: .4rem; }
-
-/* ============ SCROLL STATES ============ */
-/* Hidden + low contrast until scrolled into view */
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity .6s var(--ease), transform .6s var(--ease);
-}
-.reveal.is-visible { opacity: var(--dim); transform: none; }
-
-/* Promote to full contrast once scrolling stops */
-.reveal.is-visible.is-settled,
-.reveal.is-visible.is-settled .meta { opacity: 1; }
-.reveal.is-visible.is-settled h2,
-.reveal.is-visible.is-settled h3 { color: var(--maroon); }
-
-/* Dim body text during fast scroll, restore on settle */
-body.is-scrolling .reveal.is-visible { opacity: var(--dim); }
-body.is-scrolling .reveal.is-visible .meta { opacity: .7; }
-
-/* Keep low-contrast text AA-safe (mint bg is pale, --dim 0.62 still >4.5:1) */
-@media (prefers-contrast: more) {
-  :root { --dim: 0.85; }
-}
-
-/* ============ CONTACT / FOOTER ============ */
-.contact-list { list-style: none; padding: 0; display: grid; gap: .4rem; }
-.site-footer {
-  text-align: center; padding: 2rem 1rem;
-  color: var(--teal); font-size: .9rem;
-  border-top: 1px solid color-mix(in srgb, var(--teal) 30%, transparent);
-}
+  <script src="js/main.js"></script>
+</body>
+</html>
