@@ -66,22 +66,59 @@ roles.forEach((role) => role.addEventListener('toggle', () => {
 }));
 applyFilter('all');
 
-// 3. Copy email
-const copyBtn = document.getElementById('copy-email');
-const emailEl = document.getElementById('email');
-if (copyBtn && emailEl) {
-  copyBtn.addEventListener('click', async () => {
+// 3. Contact form, delivered by Web3Forms so the email address never appears on the page
+// Paste the access key from web3forms.com between the quotes:
+const WEB3FORMS_KEY = 'f50ce5f0-cc4d-4437-8f51-9675e9a021da';
+
+const openBtn = document.getElementById('open-form');
+const form = document.getElementById('contact-form');
+if (openBtn && form) {
+  const status = document.getElementById('cf-status');
+  const sendBtn = document.getElementById('cf-send');
+  const setStatus = (text, kind) => { status.textContent = text; status.className = 'form-status' + (kind ? ' is-' + kind : ''); };
+
+  openBtn.addEventListener('click', () => {
+    const open = form.hidden;
+    form.hidden = !open;
+    openBtn.setAttribute('aria-expanded', String(open));
+    if (open) document.getElementById('cf-name').focus();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fields = [...form.querySelectorAll('input[required], textarea[required]')];
+    let firstBad = null;
+    fields.forEach((f) => {
+      const ok = f.value.trim() !== '' && f.checkValidity();
+      f.setAttribute('aria-invalid', String(!ok));
+      if (!ok && !firstBad) firstBad = f;
+    });
+    if (firstBad) { setStatus('Please fill in your name, a valid email and a message.', 'error'); firstBad.focus(); return; }
+    if (WEB3FORMS_KEY.startsWith('PASTE_')) { setStatus('This form isn\'t connected yet. Please reach out on LinkedIn for now.', 'error'); return; }
+
+    const data = Object.fromEntries(new FormData(form));
+    if (data.botcheck) return; // filled in by a bot
+    sendBtn.disabled = true; setStatus('Sending…');
     try {
-      await navigator.clipboard.writeText(emailEl.textContent.trim());
-      copyBtn.textContent = 'Copied';
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          subject: `Portfolio message from ${data.name}`,
+          from_name: 'Callie McSpadden portfolio',
+          name: data.name, email: data.email, message: data.message,
+        }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || out.success === false) throw new Error(out.message || 'Send failed');
+      form.reset(); fields.forEach((f) => f.removeAttribute('aria-invalid'));
+      setStatus('Thanks! Your message is on its way.', 'ok');
     } catch {
-      const range = document.createRange();
-      range.selectNodeContents(emailEl);
-      const sel = window.getSelection();
-      sel.removeAllRanges(); sel.addRange(range);
-      copyBtn.textContent = 'Selected, press Copy';
+      setStatus('Your message didn\'t send. Please try again in a moment, or reach out on LinkedIn.', 'error');
+    } finally {
+      sendBtn.disabled = false;
     }
-    setTimeout(() => { copyBtn.textContent = 'Copy email'; }, 2200);
   });
 }
 
