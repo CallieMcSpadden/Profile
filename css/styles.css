@@ -71,7 +71,7 @@ main {
   padding: 2.25rem 1.5rem;
   border-right: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: .6rem; color: var(--ink); text-decoration: none; font-weight: 600; }
+.brand { display: flex; align-items: center; gap: .55rem; color: var(--ink); text-decoration: none; font-weight: 600; font-size: .95rem; white-space: nowrap; }
 .brand-mark {
   width: 14px; height: 14px; border-radius: 50%; flex: none;
   background: radial-gradient(circle at 35% 35%, var(--violet), color-mix(in srgb, var(--violet) 40%, var(--safranin)));
@@ -192,16 +192,16 @@ main {
 .links a { font-weight: 600; }
 
 /* ============ VOLUNTEER ============ */
-.volunteer {
+.volunteer, .research {
   list-style: none; margin: .75rem 0 0; padding: 0;
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;
 }
-.volunteer li {
+.volunteer li, .research li {
   display: grid; gap: .5rem; align-content: start;
   padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
 }
-.volunteer li p:not(.meta) { color: var(--muted); font-size: .95rem; }
-@media (max-width: 720px) { .volunteer { grid-template-columns: minmax(0, 1fr); } }
+.volunteer li p:not(.meta), .research li p:not(.meta) { color: var(--muted); font-size: .95rem; }
+@media (max-width: 720px) { .volunteer, .research { grid-template-columns: minmax(0, 1fr); } }
 
 /* ============ SKILLS ============ */
 .skill-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem 2.5rem; margin-top: .75rem; }

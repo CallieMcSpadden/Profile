@@ -1,5 +1,5 @@
 // ============================================================
-//  main.js — Callie McSpadden portfolio
+//  main.js — Callie Rae McSpadden portfolio
 //  Section highlighting, experience filters, email copy,
 //  footer year, and the animated orbital preview.
 // ============================================================
@@ -106,7 +106,7 @@ if (openBtn && form) {
         body: JSON.stringify({
           access_key: WEB3FORMS_KEY,
           subject: `Portfolio message from ${data.name}`,
-          from_name: 'Callie McSpadden portfolio',
+          from_name: 'Callie Rae McSpadden portfolio',
           name: data.name, email: data.email, message: data.message,
         }),
       });
