@@ -201,6 +201,7 @@ main {
   padding: 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
 }
 .volunteer li p:not(.meta), .research li p:not(.meta) { color: var(--muted); font-size: .95rem; }
+.volunteer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 720px) { .volunteer, .research { grid-template-columns: minmax(0, 1fr); } }
 
 /* ============ SKILLS ============ */
