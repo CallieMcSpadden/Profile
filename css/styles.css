@@ -10,6 +10,8 @@
   --violet-soft: #ece8ff;
   --safranin: #c23a68;
   --on-violet: #ffffff;
+  --teal: #0f766e;
+  --on-teal: #ffffff;
 
   --display: "Gloock", "Iowan Old Style", Georgia, serif;
   --body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
@@ -21,13 +23,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #100f1c; --surface: #19172a; --ink: #ecebf6; --muted: #a4a1bd; --line: #2b2842;
-    --violet: #a998ff; --violet-soft: #251f47; --safranin: #ff86ad; --on-violet: #120f24;
+    --violet: #a998ff; --violet-soft: #251f47; --safranin: #ff86ad; --on-violet: #120f24; --teal: #2dd4bf; --on-teal: #062925;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #100f1c; --surface: #19172a; --ink: #ecebf6; --muted: #a4a1bd; --line: #2b2842;
-  --violet: #a998ff; --violet-soft: #251f47; --safranin: #ff86ad; --on-violet: #120f24;
+  --violet: #a998ff; --violet-soft: #251f47; --safranin: #ff86ad; --on-violet: #120f24; --teal: #2dd4bf; --on-teal: #062925;
   color-scheme: dark;
 }
 
@@ -73,8 +75,9 @@ main {
 }
 .brand { display: flex; align-items: center; gap: .55rem; color: var(--ink); text-decoration: none; font-weight: 600; font-size: .95rem; white-space: nowrap; }
 .brand-mark {
-  width: 14px; height: 14px; border-radius: 50%; flex: none;
-  background: radial-gradient(circle at 35% 35%, var(--violet), color-mix(in srgb, var(--violet) 40%, var(--safranin)));
+  width: 14px; height: 14px; flex: none;
+  background: var(--teal);
+  clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0 50%);
 }
 .nav-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .15rem; }
 .nav-list a {
@@ -86,6 +89,8 @@ main {
 .nav-list a:hover { color: var(--ink); background: var(--violet-soft); }
 .nav-list a.is-active { color: var(--violet); background: var(--violet-soft); }
 .rail-foot { margin-top: auto; }
+.rail-foot .btn { background: var(--teal); border-color: var(--teal); color: var(--on-teal); }
+.rail-foot .btn:hover { background: color-mix(in srgb, var(--teal) 85%, var(--ink)); border-color: color-mix(in srgb, var(--teal) 85%, var(--ink)); }
 
 /* ============ BUTTONS ============ */
 .btn {
