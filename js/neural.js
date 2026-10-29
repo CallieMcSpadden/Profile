@@ -1,7 +1,9 @@
 // ============================================================
-//  neural.js: background network of neurons and circuit traces
-//  with pulses of "current". Fades behind the reading column,
-//  responds to scrolling, honours reduced motion.
+//  neural.js: background network of circuit nodes and a few
+//  neurons, joined by right-angled traces, with pulses of
+//  "current" (faint yellow tail, bright teal head). Fades
+//  behind the reading column, responds to scrolling, honours
+//  reduced motion.
 // ============================================================
 (function neuralBackground() {
   const canvas = document.createElement('canvas');
@@ -19,13 +21,25 @@
   let scrollY = window.scrollY, lastScrollY = scrollY, energy = 0;
 
   const rand = (a, b) => a + Math.random() * (b - a);
+  const TAU = Math.PI * 2;
+  const NEURON_SHARE = 0.1;   // one circle in ten is a neuron
+  const LEAD_SHARE = 0.35;    // share of circles that send out a line ending in dendrites
+
+  const toRGB = h => { h = h.replace('#', ''); if (h.length === 3) h = h.replace(/./g, c => c + c); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+  const mix = (p, q, t) => `rgb(${p.map((v, i) => Math.round(v + (q[i] - v) * t)).join(',')})`;
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement);
     const hex = v => cs.getPropertyValue(v).trim() || '#888';
     const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.getAttribute('data-theme') !== 'light'
       || document.documentElement.getAttribute('data-theme') === 'dark';
-    colors = { a: hex('--violet'), b: hex('--safranin'), dark };
+    colors = {
+      a: hex('--violet'), bg: hex('--bg'), dark,
+      // current: faint yellow tail → bright teal head
+      spark: toRGB(dark ? '#fde68a' : '#eab308'),
+      bright: toRGB(dark ? '#2dd4bf' : '#14b8a6'),
+    };
+    colors.brightCss = mix(colors.bright, colors.bright, 0);
   }
 
   // How visible the network is at a given x: low behind the text column, full in the margins
@@ -49,6 +63,64 @@
     railEdge = rail && innerWidth > 900 ? rail.getBoundingClientRect().right : 0;
   }
 
+  // ---------- shapes ----------
+  // Dendrite tree: tapering, gently curving branches that fork as they reach outward
+  function grow(segs, x, y, ang, len, w, depth) {
+    const bend = rand(-0.35, 0.35);
+    const ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len;
+    const cx = x + Math.cos(ang + bend) * len * 0.55, cy = y + Math.sin(ang + bend) * len * 0.55;
+    segs.push({ x, y, cx, cy, ex, ey, w, tip: depth === 0 });
+    if (depth === 0) return;
+    const kids = depth >= 2 ? 2 : (Math.random() < 0.5 ? 3 : 2);
+    for (let i = 0; i < kids; i++) {
+      const spread = (i / (kids - 1 || 1) - 0.5) * rand(0.7, 1.1);
+      grow(segs, ex, ey, ang + bend * 0.6 + spread, len * rand(0.52, 0.7), Math.max(0.5, w * 0.58), depth - 1);
+    }
+  }
+  // Axon terminal: a spray of curved fibres fanning forward, each ending in a small bouton
+  function terminal(x, y, dir, scale = 1) {
+    const segs = [];
+    const k = 5 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < k; i++) {
+      const a = dir + (i / (k - 1) - 0.5) * rand(1.5, 1.9);
+      const len = rand(12, 24) * scale, bend = rand(-0.45, 0.45);
+      const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+      const cx = x + Math.cos(a - bend) * len * 0.5, cy = y + Math.sin(a - bend) * len * 0.5;
+      segs.push({ x, y, cx, cy, ex, ey, w: 0.9, tip: true });
+      if (Math.random() < 0.35) {
+        const a2 = a + rand(-0.6, 0.6), l2 = len * 0.5;
+        segs.push({ x: ex, y: ey, cx: ex + Math.cos(a2) * l2 * 0.5, cy: ey + Math.sin(a2) * l2 * 0.5, ex: ex + Math.cos(a2 + 0.2) * l2, ey: ey + Math.sin(a2 + 0.2) * l2, w: 0.7, tip: true });
+      }
+    }
+    return segs;
+  }
+  function segPath(segs) {
+    const p = new Path2D();
+    segs.forEach(s => { p.moveTo(s.x, s.y); p.quadraticCurveTo(s.cx, s.cy, s.ex, s.ey); });
+    return p;
+  }
+
+  // Right-angled route from A to B: straight, an L, or a Z
+  function route(A, B) {
+    const dx = B.x - A.x, dy = B.y - A.y;
+    if (Math.abs(dx) < 4) return [A, { x: A.x, y: B.y }, B];
+    if (Math.abs(dy) < 4) return [A, { x: B.x, y: A.y }, B];
+    const r = Math.random();
+    if (r < 0.25) return [A, { x: B.x, y: A.y }, B];                      // L, across then down
+    if (r < 0.5) return [A, { x: A.x, y: B.y }, B];                       // L, down then across
+    const f = rand(0.3, 0.7);
+    if (r < 0.75) { const mx = A.x + dx * f; return [A, { x: mx, y: A.y }, { x: mx, y: B.y }, B]; } // Z, horizontal ends
+    const my = A.y + dy * f; return [A, { x: A.x, y: my }, { x: B.x, y: my }, B];                    // Z, vertical ends
+  }
+
+  function edgeFrom(a, b, pts) {
+    const cum = [0];
+    for (let s = 1; s < pts.length; s++) cum.push(cum[s - 1] + Math.hypot(pts[s].x - pts[s - 1].x, pts[s].y - pts[s - 1].y));
+    const path = new Path2D();
+    pts.forEach((p, s) => s ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y));
+    return { a, b, pts: pts.map(p => ({ x: p.x, y: p.y })), cum, len: cum[cum.length - 1], path, glow: 0 };
+  }
+
   function build() {
     nodes = []; edges = []; pulses = [];
     FIELD_H = H * 1.6;
@@ -58,20 +130,36 @@
       tries++;
       const x = rand(-20, W + 20), y = rand(-20, FIELD_H + 20);
       if (Math.random() > fade(x) * 0.9 + 0.1) continue;          // fewer nodes behind the text
-      if (nodes.some(n => (n.x - x) ** 2 + (n.y - y) ** 2 < 70 * 70)) continue;
-      const organic = Math.random() < 0.55;
-      const node = { x, y, organic, r: organic ? rand(2.2, 3.6) : rand(1.6, 2.4), glow: 0, links: [], dendrites: [] };
-      if (organic) {
-        const k = 2 + Math.floor(Math.random() * 3);
+      const neuron = Math.random() < NEURON_SHARE;
+      const room = neuron ? 170 : 70;
+      if (nodes.some(n => (n.x - x) ** 2 + (n.y - y) ** 2 < (n.neuron ? Math.max(room, 170) : room) ** 2)) continue;
+      const node = { x, y, neuron, r: neuron ? rand(2.6, 3.2) : rand(1.6, 2.4), glow: 0, links: [] };
+      if (neuron) {
+        const segs = [];
+        const k = 5 + Math.floor(Math.random() * 3);
+        const axonAt = Math.floor(Math.random() * k);
+        const turn = rand(0, TAU);
+        const longOnes = new Set(); while (longOnes.size < 2) { const j = Math.floor(Math.random() * k); if (j !== axonAt) longOnes.add(j); }
+        let axonEnd = null;
         for (let i = 0; i < k; i++) {
-          const ang = rand(0, Math.PI * 2), len = rand(10, 24);
-          const bend = rand(-0.5, 0.5);
-          node.dendrites.push({ ang, len, bend, fork: Math.random() < 0.5 ? rand(0.4, 0.9) : 0 });
+          const ang = turn + (i / k) * TAU + rand(-0.25, 0.25);
+          if (i === axonAt) {
+            // the axon: one long, slightly wavering process that ends in a terminal spray
+            const len = rand(85, 125), b = rand(-0.2, 0.2);
+            const ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len;
+            segs.push({ x, y, cx: x + Math.cos(ang + b) * len * 0.5, cy: y + Math.sin(ang + b) * len * 0.5, ex, ey, w: 1.8, tip: false });
+            axonEnd = terminal(ex, ey, ang);
+          } else {
+            grow(segs, x, y, ang, rand(36, 52) * (longOnes.has(i) ? 2 : 1), 2, 2);   // a couple of roots run twice as long
+          }
         }
+        node.trunk = segPath(segs.filter(s => s.w >= 1.2));
+        node.fine = segPath(segs.filter(s => s.w < 1.2).concat(axonEnd || []));
+        node.tips = segs.concat(axonEnd || []).filter(s => s.tip).map(s => ({ x: s.ex, y: s.ey }));
       }
       nodes.push(node);
     }
-    // connect each node to its two nearest neighbours
+    // connect each node to its two nearest neighbours with right-angled traces
     const seen = new Set();
     nodes.forEach((a, i) => {
       const near = nodes.map((b, j) => ({ j, d: (a.x - b.x) ** 2 + (a.y - b.y) ** 2 })).filter(o => o.j !== i)
@@ -80,42 +168,52 @@
         if (d > 260 * 260) return;
         const key = i < j ? i + '-' + j : j + '-' + i;
         if (seen.has(key)) return; seen.add(key);
-        edges.push(makeEdge(i, j));
+        edges.push(edgeFrom(i, j, route(nodes[i], nodes[j])));
       });
     });
-    edges.forEach((e, k) => { nodes[e.a].links.push(k); nodes[e.b].links.push(k); });
-  }
-
-  function makeEdge(i, j) {
-    const A = nodes[i], B = nodes[j];
-    const trace = !(A.organic && B.organic) && Math.random() < 0.7;
-    const pts = [];
-    if (trace) {
-      // circuit trace: horizontal run, 45° bend, horizontal run
-      const dy = B.y - A.y, dx = B.x - A.x;
-      const diag = Math.min(Math.abs(dy), Math.abs(dx) * 0.8);
-      const sx = Math.sign(dx) || 1, sy = Math.sign(dy) || 1;
-      const run = (Math.abs(dx) - diag) / 2;
-      const p1 = { x: A.x + sx * run, y: A.y };
-      const p2 = { x: p1.x + sx * diag, y: A.y + sy * diag };
-      const p3 = { x: B.x, y: p2.y };
-      [A, p1, p2, p3, B].forEach(p => pts.push({ x: p.x, y: p.y }));
-    } else {
-      // dendrite-like curve
-      const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
-      const nx = -(B.y - A.y), ny = B.x - A.x, nl = Math.hypot(nx, ny) || 1;
-      const off = rand(-0.25, 0.25) * Math.hypot(B.x - A.x, B.y - A.y);
-      const cx = mx + nx / nl * off, cy = my + ny / nl * off;
-      for (let s = 0; s <= 18; s++) {
-        const t = s / 18;
-        pts.push({ x: (1 - t) ** 2 * A.x + 2 * (1 - t) * t * cx + t * t * B.x, y: (1 - t) ** 2 * A.y + 2 * (1 - t) * t * cy + t * t * B.y });
+    // leads: lines from some circles that run off and end in dendrites
+    nodes.forEach((n, i) => {
+      if (n.neuron || Math.random() > LEAD_SHARE) return;
+      const dirs = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+      let d1 = dirs[Math.floor(Math.random() * 4)];
+      const pts = [{ x: n.x, y: n.y }];
+      let x = n.x + Math.cos(d1) * rand(30, 80), y = n.y + Math.sin(d1) * rand(30, 80);
+      pts.push({ x, y });
+      let dir = d1;
+      if (Math.random() < 0.6) {
+        dir = d1 + (Math.random() < 0.5 ? 1 : -1) * Math.PI / 2;
+        const l2 = rand(20, 60);
+        x += Math.cos(dir) * l2; y += Math.sin(dir) * l2;
+        pts.push({ x, y });
       }
+      const e = edgeFrom(i, -1, pts);
+      const segs = terminal(x, y, dir);
+      e.term = { path: segPath(segs), tips: segs.filter(s => s.tip).map(s => ({ x: s.ex, y: s.ey })) };
+      edges.push(e);
+    });
+    // a featured lead near the top of the page, with longer dendrites
+    {
+      const side = col.x1 + 60 < W - 40 ? 1 : (col.x0 - 60 > (railEdge || 0) + 40 ? -1 : 1);
+      const inMargin = n => !n.neuron && n.y > 30 && n.y < H * 0.45 && (side > 0 ? n.x > col.x1 + 60 : n.x < col.x0 - 60);
+      let i = nodes.findIndex(inMargin);
+      if (i < 0) {
+        const x = side > 0 ? Math.min(W - 40, col.x1 + rand(90, 160)) : Math.max((railEdge || 0) + 40, col.x0 - rand(90, 160));
+        nodes.push({ x, y: rand(60, H * 0.3), neuron: false, r: 2, glow: 0, links: [] });
+        i = nodes.length - 1;
+      }
+      const n = nodes[i];
+      const down = rand(80, 120);
+      const toward = -side;                                          // run back toward the text column
+      const limit = side > 0 ? col.x1 + 50 : col.x0 - 50;
+      const ex = side > 0 ? Math.max(limit, n.x + toward * rand(50, 90)) : Math.min(limit, n.x + toward * rand(50, 90));
+      const pts = [{ x: n.x, y: n.y }, { x: n.x, y: n.y + down }, { x: ex, y: n.y + down }];
+      const e = edgeFrom(i, -1, pts);
+      const dir = toward > 0 ? 0 : Math.PI;
+      const segs = terminal(ex, n.y + down, dir, 1.6);
+      e.term = { path: segPath(segs), tips: segs.filter(t => t.tip).map(t => ({ x: t.ex, y: t.ey })) };
+      edges.push(e);
     }
-    const cum = [0];
-    for (let s = 1; s < pts.length; s++) cum.push(cum[s - 1] + Math.hypot(pts[s].x - pts[s - 1].x, pts[s].y - pts[s - 1].y));
-    const path = new Path2D();
-    pts.forEach((p, s) => s ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y));
-    return { a: i, b: j, trace, pts, cum, len: cum[cum.length - 1], path };
+    edges.forEach((e, k) => { nodes[e.a].links.push(k); if (e.b >= 0) nodes[e.b].links.push(k); });
   }
 
   function pointAt(e, d) {
@@ -141,79 +239,87 @@
     return -(scrollY / max) * (FIELD_H - H);
   }
 
+  const dots = (tips, r) => { ctx.beginPath(); tips.forEach(t => { ctx.moveTo(t.x + r, t.y); ctx.arc(t.x, t.y, r, 0, TAU); }); ctx.fill(); };
+
   function draw(dt) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const oy = offsetY();
     ctx.translate(0, oy);
     const base = colors.dark ? 0.22 : 0.16;
+    const onScreen = (y0, y1) => !(y1 + oy < -60 || y0 + oy > H + 60);
 
-    // connections
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // traces and leads
+    ctx.strokeStyle = colors.a; ctx.fillStyle = colors.a;
+    ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
     edges.forEach(e => {
-      const A = nodes[e.a], B = nodes[e.b];
-      if (Math.max(A.y, B.y) + oy < -30 || Math.min(A.y, B.y) + oy > H + 30) return;
-      const g = ctx.createLinearGradient(A.x, A.y, B.x, B.y);
-      g.addColorStop(0, colors.a); g.addColorStop(1, colors.b);
-      ctx.strokeStyle = g;
-      ctx.globalAlpha = base * Math.min(fade(A.x), fade(B.x));
-      ctx.lineWidth = e.trace ? 1 : 1.2;
+      const A = e.pts[0], B = e.pts[e.pts.length - 1];
+      if (!onScreen(Math.min(A.y, B.y), Math.max(A.y, B.y))) return;
+      const f = Math.min(fade(A.x), fade(B.x));
+      ctx.globalAlpha = base * f;
+      ctx.lineWidth = 1;
       ctx.stroke(e.path);
+      if (e.term) {
+        e.glow = Math.max(0, e.glow - dt * 1.4);
+        ctx.lineCap = 'round';
+        ctx.globalAlpha = (base + 0.12 + e.glow * 0.6) * f;
+        ctx.lineWidth = 0.9; ctx.stroke(e.term.path);
+        dots(e.term.tips, 1.3 + e.glow * 0.8);
+        ctx.lineCap = 'butt';
+      }
     });
 
-    // nodes: neuron cell bodies with dendrites, or circuit vias
+    // circles (circuit nodes) and neurons
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     nodes.forEach(n => {
-      const y = n.y + oy;
-      if (y < -40 || y > H + 40) return;
+      if (!onScreen(n.y - 200, n.y + 200)) return;
       const f = fade(n.x);
       n.glow = Math.max(0, n.glow - dt * 1.6);
-      ctx.globalAlpha = (base + 0.18 + n.glow * 0.6) * f;
       ctx.strokeStyle = colors.a; ctx.fillStyle = colors.a;
-      if (n.organic) {
-        ctx.lineWidth = 1;
-        n.dendrites.forEach(d => {
-          const ex = n.x + Math.cos(d.ang) * d.len, ey = n.y + Math.sin(d.ang) * d.len;
-          const cx = n.x + Math.cos(d.ang + d.bend) * d.len * .55, cy = n.y + Math.sin(d.ang + d.bend) * d.len * .55;
-          ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.quadraticCurveTo(cx, cy, ex, ey); ctx.stroke();
-          if (d.fork) {
-            ctx.beginPath(); ctx.moveTo(ex, ey);
-            ctx.lineTo(ex + Math.cos(d.ang + d.fork) * d.len * .45, ey + Math.sin(d.ang + d.fork) * d.len * .45); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(ex, ey);
-            ctx.lineTo(ex + Math.cos(d.ang - d.fork) * d.len * .4, ey + Math.sin(d.ang - d.fork) * d.len * .4); ctx.stroke();
-          }
-        });
-        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + n.glow * 2, 0, Math.PI * 2); ctx.fill();
+      if (n.neuron) {
+        const a = (base + 0.2 + n.glow * 0.5) * f;
+        ctx.globalAlpha = a;
+        ctx.lineWidth = 1.8; ctx.stroke(n.trunk);
+        ctx.lineWidth = 0.8; ctx.stroke(n.fine);
+        dots(n.tips, 0.9);
+        // cell body with a nucleus
+        ctx.globalAlpha = Math.min(1, a * 1.5);
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + n.glow * 1.2, 0, TAU); ctx.fill();
       } else {
+        ctx.globalAlpha = (base + 0.18 + n.glow * 0.6) * f;
         ctx.lineWidth = 1.1;
-        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 1.2 + n.glow * 1.5, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 1.2 + n.glow * 1.5, 0, TAU); ctx.stroke();
       }
       if (n.glow > 0.05) {
-        const rg = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 18);
-        rg.addColorStop(0, colors.b); rg.addColorStop(1, 'transparent');
-        ctx.globalAlpha = n.glow * 0.5 * f; ctx.fillStyle = rg;
-        ctx.beginPath(); ctx.arc(n.x, n.y, 18, 0, Math.PI * 2); ctx.fill();
+        const R = n.neuron ? 26 : 18;
+        const rg = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, R);
+        rg.addColorStop(0, colors.brightCss); rg.addColorStop(1, 'transparent');
+        ctx.globalAlpha = n.glow * 0.45 * f; ctx.fillStyle = rg;
+        ctx.beginPath(); ctx.arc(n.x, n.y, R, 0, TAU); ctx.fill();
       }
     });
 
-    // pulses of current
+    // pulses of current: a comet with a faint yellow tail and a bright teal head
+    const TRAIL = 14, GAP = 3.2;
     for (let i = pulses.length - 1; i >= 0; i--) {
       const p = pulses[i], e = edges[p.e];
       p.d += p.speed * (1 + energy * 2.2) * dt;
       if (p.d >= e.len) {
         pulses.splice(i, 1);
+        if (p.dir === 1 && e.b < 0) { e.glow = 1; continue; }        // reached the dendrites at a lead's end
         const arrive = p.dir === 1 ? e.b : e.a;
         nodes[arrive].glow = 1;
         if (p.depth < 6 && Math.random() < 0.62) fire(arrive, p.depth + 1);
         continue;
       }
-      for (let k = 0; k < 7; k++) {
-        const dd = p.d - k * 5;
-        if (dd < 0) break;
+      for (let k = TRAIL - 1; k >= 0; k--) {
+        const dd = p.d - k * GAP;
+        if (dd < 0) continue;
         const pt = pointAt(e, p.dir === 1 ? dd : e.len - dd);
-        const f = fade(pt.x);
-        ctx.globalAlpha = (0.9 - k * 0.12) * f * (colors.dark ? 1 : 0.85);
-        ctx.fillStyle = k < 2 ? colors.b : colors.a;
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, k === 0 ? 2.1 : 1.6 - k * 0.15, 0, Math.PI * 2); ctx.fill();
+        const t = k / (TRAIL - 1);                                    // 0 at the head, 1 at the tail
+        ctx.globalAlpha = (0.95 - t * 0.8) * fade(pt.x) * (colors.dark ? 1 : 0.9);
+        ctx.fillStyle = mix(colors.bright, colors.spark, t);
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 2.3 - t * 1.4, 0, TAU); ctx.fill();
       }
     }
     ctx.globalAlpha = 1;

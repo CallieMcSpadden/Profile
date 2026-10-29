@@ -1,5 +1,5 @@
 /* Layout: a fixed left rail for navigation beside one calm reading column; on phones the rail becomes a sticky bar of section chips.
-   Palette: the Gram stain — teal as the accent, safranin pink as the rare second note, on cool slide-glass neutrals. */
+   Palette: teal accents with a faint yellow spark for the current, safranin pink kept only for errors and filter matches, on cool slide-glass neutrals. */
 :root {
   --bg: #f6f5fa;
   --surface: #ffffff;
@@ -12,6 +12,8 @@
   --on-violet: #ffffff;
   --teal: #0f766e;
   --on-teal: #ffffff;
+  --teal-text: #115e59;   /* secondary teal for small labels (was safranin pink) */
+  --spark: #eab308;       /* faint yellow at the tail of the current */
 
   --display: "Gloock", "Iowan Old Style", Georgia, serif;
   --body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
@@ -23,13 +25,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #100f1c; --surface: #19172a; --ink: #ecebf6; --muted: #a4a1bd; --line: #2b2842;
-    --violet: #2dd4bf; --violet-soft: #123330; --safranin: #ff86ad; --on-violet: #062925; --teal: #2dd4bf; --on-teal: #062925;
+    --violet: #2dd4bf; --violet-soft: #123330; --safranin: #ff86ad; --on-violet: #062925; --teal: #2dd4bf; --on-teal: #062925; --teal-text: #5eead4; --spark: #fde68a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #100f1c; --surface: #19172a; --ink: #ecebf6; --muted: #a4a1bd; --line: #2b2842;
-  --violet: #2dd4bf; --violet-soft: #123330; --safranin: #ff86ad; --on-violet: #062925; --teal: #2dd4bf; --on-teal: #062925;
+  --violet: #2dd4bf; --violet-soft: #123330; --safranin: #ff86ad; --on-violet: #062925; --teal: #2dd4bf; --on-teal: #062925; --teal-text: #5eead4; --spark: #fde68a;
   color-scheme: dark;
 }
 
@@ -110,7 +112,7 @@ main {
 .eyebrow, .kicker, .meta, .filter-label, .role-dates, .cert-date {
   font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; text-transform: uppercase;
 }
-.eyebrow { color: var(--safranin); }
+.eyebrow { color: var(--teal-text); }
 .hero h1 { font-size: calc(clamp(2.8rem, 8vw, 5rem) * var(--head-scale, 1)); }
 .lede { font-size: clamp(1.1rem, 2.2vw, 1.3rem); color: var(--muted); max-width: 38ch; line-height: 1.55; }
 
@@ -194,7 +196,7 @@ main {
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .atom-mark { color: #fff; } }
 :root[data-theme="dark"] .atom-mark { color: #fff; }
 .feature-body p:not(.meta) { color: var(--muted); }
-.meta { color: var(--safranin); }
+.meta { color: var(--teal-text); }
 .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: .25rem; }
 .links a { font-weight: 600; }
 
@@ -303,14 +305,14 @@ main {
 html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--violet) 75%, transparent) transparent; }
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--violet), var(--safranin)); border-radius: 999px; border: 3px solid var(--bg); }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, color-mix(in srgb, var(--spark) 55%, var(--teal)), var(--teal)); border-radius: 999px; border: 3px solid var(--bg); }
 
 /* the "axon": navigation edge fills with current as you read */
 .rail::after {
   content: ""; position: absolute; top: 0; right: -1px; width: 2px;
   height: calc(var(--scroll-progress, 0) * 100%);
-  background: linear-gradient(180deg, var(--violet), var(--safranin));
-  box-shadow: 0 0 10px color-mix(in srgb, var(--safranin) 70%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--spark) 45%, transparent), var(--teal));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--teal) 60%, transparent);
   border-radius: 2px; pointer-events: none;
 }
 @media (max-width: 900px) {
