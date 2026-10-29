@@ -106,10 +106,10 @@
     if (Math.abs(dx) < 4) return [A, { x: A.x, y: B.y }, B];
     if (Math.abs(dy) < 4) return [A, { x: B.x, y: A.y }, B];
     const r = Math.random();
-    if (r < 0.25) return [A, { x: B.x, y: A.y }, B];                      // L, across then down
-    if (r < 0.5) return [A, { x: A.x, y: B.y }, B];                       // L, down then across
+    if (r < 0.43) return [A, { x: B.x, y: A.y }, B];                      // L, across then down
+    if (r < 0.86) return [A, { x: A.x, y: B.y }, B];                       // L, down then across
     const f = rand(0.3, 0.7);
-    if (r < 0.75) { const mx = A.x + dx * f; return [A, { x: mx, y: A.y }, { x: mx, y: B.y }, B]; } // Z, horizontal ends
+    if (r < 0.93) { const mx = A.x + dx * f; return [A, { x: mx, y: A.y }, { x: mx, y: B.y }, B]; } // Z, horizontal ends
     const my = A.y + dy * f; return [A, { x: A.x, y: my }, { x: B.x, y: my }, B];                    // Z, vertical ends
   }
 
@@ -124,7 +124,7 @@
   function build() {
     nodes = []; edges = []; pulses = [];
     FIELD_H = H * 1.6;
-    const target = Math.round(Math.min(140, Math.max(36, (W * FIELD_H) / 19000)));
+    const target = Math.round(Math.min(140, Math.max(36, (W * FIELD_H) / 24000)));
     let tries = 0;
     while (nodes.length < target && tries < target * 30) {
       tries++;
@@ -159,13 +159,36 @@
       }
       nodes.push(node);
     }
+    // featured leads: one near the top pointing down with long dendrites (3x the earlier feature),
+    // one in the bottom right pointing up with dendrites twice the usual length
+    const marginX = () => {
+      const right = W - col.x1, left = col.x0 - (railEdge || 0);
+      return right >= left ? col.x1 + right * 0.55 : (railEdge || 0) + left * 0.45;
+    };
+    const feature = [];
+    const place = (x, y, ty, dir, scale, reach) => {
+      const yy0 = dir > 0 ? y - 30 : ty - reach, yy1 = dir > 0 ? ty + reach : y + 30;
+      nodes = nodes.filter(n => !(n.x > x - reach && n.x < x + reach && n.y > yy0 && n.y < yy1) && !(n.neuron && Math.hypot(n.x - x, n.y - (y + ty) / 2) < reach + 160));
+      const node = { x, y, neuron: false, r: 2, glow: 0, links: [] };
+      nodes.push(node);
+      feature.push({ node, ty, dir, scale });
+    };
+    {
+      const x = marginX(), y = H * 0.12;
+      place(x, y, y + rand(70, 100), Math.PI / 2, 4.8, 130);
+      const x2 = Math.min(W - 60, Math.max(x, W * 0.82)), y2 = FIELD_H * rand(0.82, 0.9);
+      place(x2, y2, y2 - rand(60, 90), -Math.PI / 2, 2, 70);
+    }
+    // resolve indices once all clearing is done
+    feature.forEach(f => { f.i = nodes.indexOf(f.node); });
     // connect each node to its two nearest neighbours with right-angled traces
     const seen = new Set();
     nodes.forEach((a, i) => {
       const near = nodes.map((b, j) => ({ j, d: (a.x - b.x) ** 2 + (a.y - b.y) ** 2 })).filter(o => o.j !== i)
         .sort((p, q) => p.d - q.d).slice(0, 2);
-      near.forEach(({ j, d }) => {
+      near.forEach(({ j, d }, rank) => {
         if (d > 260 * 260) return;
+        if (rank === 1 && Math.random() < 0.5) return;               // fewer loops and boxed-in pockets
         const key = i < j ? i + '-' + j : j + '-' + i;
         if (seen.has(key)) return; seen.add(key);
         edges.push(edgeFrom(i, j, route(nodes[i], nodes[j])));
@@ -187,32 +210,21 @@
         pts.push({ x, y });
       }
       const e = edgeFrom(i, -1, pts);
-      const segs = terminal(x, y, dir);
+      const up = Math.abs(dir + Math.PI / 2) < 0.01 || Math.abs(dir - 3 * Math.PI / 2) < 0.01;
+      const bottomRight = x > W * 0.6 && y > FIELD_H * 0.55;
+      const segs = terminal(x, y, dir, up && bottomRight ? 2 : 1);
       e.term = { path: segPath(segs), tips: segs.filter(s => s.tip).map(s => ({ x: s.ex, y: s.ey })) };
       edges.push(e);
     });
-    // a featured lead near the top of the page, with longer dendrites
-    {
-      const side = col.x1 + 60 < W - 40 ? 1 : (col.x0 - 60 > (railEdge || 0) + 40 ? -1 : 1);
-      const inMargin = n => !n.neuron && n.y > 30 && n.y < H * 0.45 && (side > 0 ? n.x > col.x1 + 60 : n.x < col.x0 - 60);
-      let i = nodes.findIndex(inMargin);
-      if (i < 0) {
-        const x = side > 0 ? Math.min(W - 40, col.x1 + rand(90, 160)) : Math.max((railEdge || 0) + 40, col.x0 - rand(90, 160));
-        nodes.push({ x, y: rand(60, H * 0.3), neuron: false, r: 2, glow: 0, links: [] });
-        i = nodes.length - 1;
-      }
-      const n = nodes[i];
-      const down = rand(80, 120);
-      const toward = -side;                                          // run back toward the text column
-      const limit = side > 0 ? col.x1 + 50 : col.x0 - 50;
-      const ex = side > 0 ? Math.max(limit, n.x + toward * rand(50, 90)) : Math.min(limit, n.x + toward * rand(50, 90));
-      const pts = [{ x: n.x, y: n.y }, { x: n.x, y: n.y + down }, { x: ex, y: n.y + down }];
-      const e = edgeFrom(i, -1, pts);
-      const dir = toward > 0 ? 0 : Math.PI;
-      const segs = terminal(ex, n.y + down, dir, 1.6);
+    // the two featured leads, each in its own cleared space
+    feature.forEach(f => {
+      const n = nodes[f.i];
+      const pts = [{ x: n.x, y: n.y }, { x: n.x, y: f.ty }];
+      const e = edgeFrom(f.i, -1, pts);
+      const segs = terminal(n.x, f.ty, f.dir, f.scale);
       e.term = { path: segPath(segs), tips: segs.filter(t => t.tip).map(t => ({ x: t.ex, y: t.ey })) };
       edges.push(e);
-    }
+    });
     edges.forEach((e, k) => { nodes[e.a].links.push(k); if (e.b >= 0) nodes[e.b].links.push(k); });
   }
 
@@ -225,13 +237,13 @@
     return { x: pts[s - 1].x + (pts[s].x - pts[s - 1].x) * t, y: pts[s - 1].y + (pts[s].y - pts[s - 1].y) * t };
   }
 
-  function fire(nodeIndex, depth) {
+  function fire(nodeIndex, depth, slow = true) {
     const n = nodes[nodeIndex];
     if (!n || !n.links.length || pulses.length > 60) return;
     n.glow = 1;
     const k = n.links[Math.floor(Math.random() * n.links.length)];
     const e = edges[k];
-    pulses.push({ e: k, d: 0, dir: e.a === nodeIndex ? 1 : -1, speed: rand(90, 170), depth });
+    pulses.push({ e: k, d: 0, dir: e.a === nodeIndex ? 1 : -1, speed: rand(90, 170) * (slow ? 0.25 : 1), depth, slow });
   }
 
   function offsetY() {
@@ -246,7 +258,7 @@
     ctx.clearRect(0, 0, W, H);
     const oy = offsetY();
     ctx.translate(0, oy);
-    const base = colors.dark ? 0.22 : 0.16;
+    const base = colors.dark ? 0.15 : 0.11;
     const onScreen = (y0, y1) => !(y1 + oy < -60 || y0 + oy > H + 60);
 
     // traces and leads
@@ -309,7 +321,7 @@
         if (p.dir === 1 && e.b < 0) { e.glow = 1; continue; }        // reached the dendrites at a lead's end
         const arrive = p.dir === 1 ? e.b : e.a;
         nodes[arrive].glow = 1;
-        if (p.depth < 6 && Math.random() < 0.62) fire(arrive, p.depth + 1);
+        if (p.depth < 6 && Math.random() < 0.62) fire(arrive, p.depth + 1, p.slow);
         continue;
       }
       for (let k = TRAIL - 1; k >= 0; k--) {
@@ -343,7 +355,7 @@
     const oy = offsetY();
     let best = -1, bd = 60 * 60;
     nodes.forEach((n, i) => { const d = (n.x - e.clientX) ** 2 + (n.y + oy - e.clientY) ** 2; if (d < bd) { bd = d; best = i; } });
-    if (best >= 0) { lastHover = performance.now(); fire(best, 0); }
+    if (best >= 0) { lastHover = performance.now(); fire(best, 0, false); }
   }, { passive: true });
 
   function resize() {
@@ -365,7 +377,7 @@
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (!document.hidden) {
       energy = Math.max(0, energy - dt * 0.6);
-      spawn += dt * (0.9 + energy * 6);
+      spawn += dt * (0.9 + energy * 6) / 8;
       while (spawn > 1) {
         spawn -= 1;
         const oy = offsetY();
