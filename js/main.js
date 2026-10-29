@@ -38,13 +38,18 @@ const roles = [...document.querySelectorAll('.role')];
 const countEl = document.getElementById('filter-count');
 const totalBullets = document.querySelectorAll('.bullets li').length;
 
+const timeline = document.querySelector('.timeline');
+const roleItems = timeline ? [...timeline.children] : [];   // original (chronological) order
+
 function applyFilter(tag) {
+  // remember where each role sits, so the reshuffle can glide (FLIP)
+  const before = new Map(roleItems.map((li) => [li, li.getBoundingClientRect().top]));
   chips.forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.filter === tag)));
   let shown = 0;
   roles.forEach((role, i) => {
     let matches = 0;
     role.querySelectorAll('.bullets li').forEach((li) => {
-      const hit = tag === 'all' || li.dataset.tags.split(' ').includes(tag);
+      const hit = tag === 'all' || (li.dataset.tags || '').split(' ').includes(tag);
       li.hidden = !hit;
       li.classList.toggle('is-match', hit && tag !== 'all');
       if (hit) matches++;
@@ -53,10 +58,24 @@ function applyFilter(tag) {
     role.classList.toggle('is-empty', matches === 0);
     role.open = tag === 'all' ? i === 0 : matches > 0;
   });
+  // matching roles rise to the top (newest first); roles with no match fade and sink
+  if (timeline) {
+    const empty = (li) => (li.querySelector('.role.is-empty') ? 1 : 0);
+    [...roleItems]
+      .sort((a, b) => empty(a) - empty(b) || roleItems.indexOf(a) - roleItems.indexOf(b))
+      .forEach((li) => timeline.appendChild(li));
+    if (!reduceMotion) {
+      roleItems.forEach((li) => {
+        const dy = before.get(li) - li.getBoundingClientRect().top;
+        if (Math.abs(dy) > 1) li.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 450, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      });
+    }
+  }
   countEl.textContent = tag === 'all'
     ? `${totalBullets} highlights across ${roles.length} roles`
     : `${shown} of ${totalBullets} highlights`;
 }
+window.__applyExperienceFilter = applyFilter;
 chips.forEach((c) => c.addEventListener('click', () => applyFilter(c.dataset.filter)));
 // Opening a role by hand while filtered shows everything in it
 roles.forEach((role) => role.addEventListener('toggle', () => {

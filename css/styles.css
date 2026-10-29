@@ -1,13 +1,13 @@
 /* Layout: a fixed left rail for navigation beside one calm reading column; on phones the rail becomes a sticky bar of section chips.
-   Palette: the Gram stain — crystal violet as the accent, safranin pink as the rare second note, on cool slide-glass neutrals. */
+   Palette: the Gram stain — teal as the accent, safranin pink as the rare second note, on cool slide-glass neutrals. */
 :root {
   --bg: #f6f5fa;
   --surface: #ffffff;
   --ink: #18162b;
   --muted: #5e5b76;
   --line: #e2dfee;
-  --violet: #5a3fd0;
-  --violet-soft: #ece8ff;
+  --violet: #0f766e; /* accent now teal; token name kept so every rule follows */
+  --violet-soft: #dcf3ef;
   --safranin: #c23a68;
   --on-violet: #ffffff;
   --teal: #0f766e;
@@ -23,13 +23,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #100f1c; --surface: #19172a; --ink: #ecebf6; --muted: #a4a1bd; --line: #2b2842;
-    --violet: #a998ff; --violet-soft: #251f47; --safranin: #ff86ad; --on-violet: #120f24; --teal: #2dd4bf; --on-teal: #062925;
+    --violet: #2dd4bf; --violet-soft: #123330; --safranin: #ff86ad; --on-violet: #062925; --teal: #2dd4bf; --on-teal: #062925;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #100f1c; --surface: #19172a; --ink: #ecebf6; --muted: #a4a1bd; --line: #2b2842;
-  --violet: #a998ff; --violet-soft: #251f47; --safranin: #ff86ad; --on-violet: #120f24; --teal: #2dd4bf; --on-teal: #062925;
+  --violet: #2dd4bf; --violet-soft: #123330; --safranin: #ff86ad; --on-violet: #062925; --teal: #2dd4bf; --on-teal: #062925;
   color-scheme: dark;
 }
 
@@ -143,7 +143,7 @@ main {
   content: ""; position: absolute; left: 0; top: 1.55rem; width: 11px; height: 11px; border-radius: 50%;
   background: var(--bg); border: 2px solid var(--violet);
 }
-.timeline > li:first-child::before { background: var(--violet); }
+.timeline > li.is-current::before { background: var(--violet); }
 
 .role { border-bottom: 1px solid var(--line); transition: opacity .25s var(--ease); }
 .role summary {
@@ -161,7 +161,9 @@ main {
 .role-dates { color: var(--muted); }
 .role-title { font-weight: 600; font-size: 1.15rem; transition: color .2s var(--ease); }
 .role-org { color: var(--muted); font-size: .95rem; }
-.role.is-empty { opacity: .45; }
+.timeline > li { transition: opacity .3s var(--ease); }
+.timeline > li:has(.role.is-empty) { opacity: .4; }
+.role.is-empty .role-title { color: var(--muted); }
 
 .bullets { margin: 0; padding: 0 0 1.4rem; list-style: none; display: grid; gap: .65rem; }
 .bullets li { position: relative; padding-left: 1.1rem; max-width: 66ch; }
